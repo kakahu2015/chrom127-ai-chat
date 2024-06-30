@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome AI Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: #f0f0f0;
+        }
+        #chatbox {
+            flex-grow: 1;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        #controls {
+            display: flex;
+            gap: 10px;
+        }
+        #userinput {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #clearBtn {
+            background-color: #f44336;
+        }
+        #clearBtn:hover {
+            background-color: #da190b;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .user-message {
+            background-color: #e7f5fe;
+            text-align: right;
+        }
+        .ai-message {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div id="chatbox"></div>
+    <div id="controls">
+        <input type="text" id="userinput" placeholder="Type your message here">
+        <button onclick="sendMessage()">Send</button>
+        <button id="clearBtn" onclick="clearChat()">Clear Chat</button>
+    </div>
+
+    <script>
+        const userInput = document.getElementById('userinput');
+        const chatbox = document.getElementById('chatbox');
+        let aiSession;
+
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        async function initAI() {
+            const canCreate = await window.ai.canCreateGenericSession();
+            if (canCreate !== "no") {
+                aiSession = await window.ai.createTextSession();
+            } else {
+                appendMessage('ai', 'Error: Can\'t create AI session');
+            }
+        }
+
+        async function sendMessage() {
+            if (userInput.value.trim() === '') return;
+            
+            const userMessage = userInput.value.trim();
+            appendMessage('user', userMessage);
+            userInput.value = '';
+
+            if (!aiSession) {
+                await initAI();
+            }
+
+            if (aiSession) {
+                try {
+                    const response = await aiSession.prompt(userMessage);
+                    appendMessage('ai', response.trim());
+                } catch (error) {
+                    appendMessage('ai', 'Error: Failed to get response from AI');
+                    console.error('AI response error:', error);
+                }
+            }
+        }
+
+        function appendMessage(sender, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
+            messageDiv.textContent = `${sender === 'user' ? 'You' : 'AI'}: ${content}`;
+            chatbox.appendChild(messageDiv);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        function clearChat() {
+            chatbox.innerHTML = '';
+        }
+
+        // Initialize AI session when the page loads
+        initAI();
+    </script>
+</body>
+</html>
